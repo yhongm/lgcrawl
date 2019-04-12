@@ -130,7 +130,7 @@ class LgCrawl(object):
         self.currentRow += 1
 
 
-###python LagouJobCrawl.py 开始爬取
+###python LagouJobCrawl.py 城市 职业 页数开始爬取
 if __name__ == "__main__":
     city=sys.argv[1]
     job=sys.argv[2]
