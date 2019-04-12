@@ -4,17 +4,19 @@ import browsercookie
 import json
 import time
 import xlwt
-
+import sys
+from urllib.parse import urlencode
 
 class LgCrawl(object):
-    def __init__(self, job, pageNum):
+    def __init__(self, city,job, pageNum):
         """
 
         :param job: 工作名字
         :param pageNum: 爬取页数
         """
         self.job = job
-        self.excelName = '%s-%s.xls' % (self.job, time.time())
+        self.city = urlencode({"city": city})
+        self.excelName = u'%s-%s.xls' % (self.job, int(time.time()))
         self.pageNum = pageNum
         self.currentRow = 0
         self.book = xlwt.Workbook(encoding='utf-8', style_compression=0)
@@ -46,7 +48,7 @@ class LgCrawl(object):
         head['X-Anit-Forge-Token'] = 'None'
         head['X-Anit-Forge-Code'] = '0'
         head['X-Requested-With'] = 'XMLHttpRequest'
-        head['Referer'] = 'https://www.lagou.com/jobs/list_sem?labelWords=&fromSearch=true&suginput='
+        head['Referer'] = 'https://www.lagou.com/jobs/list_%s?labelWords=&fromSearch=true&suginput='%self.job
         head['Origin'] = 'https://www.lagou.com'
         data = dict()
         if page == '1':
@@ -59,14 +61,18 @@ class LgCrawl(object):
         print("header:" + str(head))
         print('data:' + str(data))
         resp = requests.post(
-            url="https://www.lagou.com/jobs/positionAjax.json?px=default&city=%E5%8C%97%E4%BA%AC&needAddtionalResult=false",
+            url="https://www.lagou.com/jobs/positionAjax.json?px=default&%s&needAddtionalResult=false"%self.city,
             cookies=cookies, headers=head, data=data)
         print("resp:" + str(resp.content))
-        result = json.loads(resp.content)['content']['positionResult']['result']
-        for r in result:
-            self.writeExcel(r)
-
-        self.book.save(self.excelName)
+        # result = json.loads(resp.content)['content']['positionResult']['result']
+        if 'success' in json.loads(resp.content):
+            result = json.loads(resp.content)['content']['positionResult']['result']
+            for r in result:
+                self.writeExcel(r)
+            # print("excelName:"+self.excelName)
+            self.book.save(self.excelName)
+        else:
+            print("error:" + json.loads(resp.content)['msg'])
 
     def writeExcel(self, r):
         companyShortName = r['companyShortName']
@@ -126,5 +132,8 @@ class LgCrawl(object):
 
 ###python LagouJobCrawl.py 开始爬取
 if __name__ == "__main__":
-    LgCrawl(job='android', pageNum=30).go()
-    print("main")
+    city=sys.argv[1]
+    job=sys.argv[2]
+    page=sys.argv[3]
+    LgCrawl(city=city,job=job, pageNum=int(page)).go()
+    
